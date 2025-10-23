@@ -1,0 +1,107 @@
+
+
+Select one of these options:
+  R - Register user id
+  L - Login as user id
+  A - Add buddy
+  D - Delete buddy
+  M - Message buddy
+  S - Buddy status
+  X - Exit application
+Your choice: R
+Enter user id: scott1
+Registering user id: scott1
+200 OK
+
+
+Select one of these options:
+  R - Register user id
+  L - Login as user id
+  A - Add buddy
+  D - Delete buddy
+  M - Message buddy
+  S - Buddy status
+  X - Exit application
+Your choice: a
+Enter buddy id: scott2
+202 NO SUCH USER
+
+
+Select one of these options:
+  R - Register user id
+  L - Login as user id
+  A - Add buddy
+  D - Delete buddy
+  M - Message buddy
+  S - Buddy status
+  X - Exit application
+Your choice: a
+Enter buddy id: scott2
+200 OK
+
+
+Select one of these options:
+  R - Register user id
+  L - Login as user id
+  A - Add buddy
+  D - Delete buddy
+  M - Message buddy
+  S - Buddy status
+  X - Exit application
+Your choice: s
+My buddy list:
+scott2  100 ONLINE      127.0.0.1       1248
+
+
+Select one of these options:
+  R - Register user id
+  L - Login as user id
+  A - Add buddy
+  D - Delete buddy
+  M - Message buddy
+  S - Buddy status
+  X - Exit application
+Your choice: m
+Enter buddy id: scott2
+Attempting to connect...
+Buddy accepted connection.
+Enter your text to send to buddy.  Enter q to quit.
+> Hello buddy!
+>
+B: Nice to meet you buddy!
+> Buddy connection closed.
+
+
+Select one of these options:
+  R - Register user id
+  L - Login as user id
+  A - Add buddy
+  D - Delete buddy
+  M - Message buddy
+  S - Buddy status
+  X - Exit application
+Your choice: d
+Enter buddy id: scott2
+200 OK
+
+Select one of these options:
+  R - Register user id
+  L - Login as user id
+  A - Add buddy
+  D - Delete buddy
+  M - Message buddy
+  S - Buddy status
+  X - Exit application
+Your choice: s
+My buddy list:
+
+
+Select one of these options:
+  R - Register user id
+  L - Login as user id
+  A - Add buddy
+  D - Delete buddy
+  M - Message buddy
+  S - Buddy status
+  X - Exit application
+Your choice: x

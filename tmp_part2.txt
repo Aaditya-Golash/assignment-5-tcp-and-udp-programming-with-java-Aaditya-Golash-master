@@ -1,0 +1,258 @@
+		}
+	}
+
+	private String getLine()
+	{	// Read a line from standard input
+		String inputLine = null;
+		  try{
+			  inputLine = reader.readLine();
+		  }catch(IOException e){
+			 System.out.println(e);
+		  }
+	 	 return inputLine;
+	}
+
+	private void printMenu()
+	{	System.out.println("\n\nSelect one of these options: ");
+		System.out.println("  R - Register user id");
+		System.out.println("  L - Login as user id");
+		System.out.println("  A - Add buddy");
+		System.out.println("  D - Delete buddy");
+		System.out.println("  M - Message buddy");
+		System.out.println("  S - Buddy status");
+		System.out.println("  X - Exit application");
+		System.out.print("Your choice: ");
+	}
+
+	// Helper: TCP single-line request
+	private String tcpRequest(String line)
+	{
+		Socket s = null;
+		try {
+			s = new Socket(serverAddress, TCPServerPort);
+			DataOutputStream out = new DataOutputStream(s.getOutputStream());
+			BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+			out.writeBytes(line+"\r\n");
+			String resp = in.readLine();
+			try { in.close(); } catch (Exception e) {}
+			try { out.close(); } catch (Exception e) {}
+			try { s.close(); } catch (Exception e) {}
+			return resp;
+		} catch (Exception e) {
+			System.out.println(e);
+			try { if (s != null) s.close(); } catch (Exception ex) {}
+			return null;
+		}
+	}
+
+	// Helper: find buddy record by id (case-insensitive)
+	private BuddyStatusRecord findBuddy(String bid)
+	{
+		ArrayList<BuddyStatusRecord> snapshot;
+		synchronized(this) { snapshot = new ArrayList<BuddyStatusRecord>(buddyList); }
+		for (BuddyStatusRecord b : snapshot) {
+			if (b.buddyId.equalsIgnoreCase(bid)) return b;
+		}
+		return null;
+	}
+
+	// UDP loop: periodically send SET and GET; receive and update buddy list
+	private void udpLoop()
+	{
+		try {
+			udpSocket = new DatagramSocket();
+			udpSocket.setSoTimeout(3000);
+			InetAddress serverIP = InetAddress.getByName(serverAddress);
+			byte[] recvBuf = new byte[4096];
+			while (running) {
+				if (userId != null && userId.trim().length() > 0) {
+					// Send status
+					sendUdp(udpSocket, serverIP, 1235, "SET "+userId.toLowerCase()+" "+(status==null?onlineStatus:status)+" "+TCPMessagePort);
+					// Request buddy list
+					sendUdp(udpSocket, serverIP, 1235, "GET "+userId.toLowerCase());
+					try {
+						DatagramPacket receivePacket = new DatagramPacket(recvBuf, recvBuf.length);
+						udpSocket.receive(receivePacket);
+						String payload = new String(receivePacket.getData(), 0, receivePacket.getLength());
+						updateBuddyListFromPayload(payload);
+					} catch (SocketTimeoutException te) {
+						// ignore timeouts
+					}
+				}
+				try { Thread.sleep(10000); } catch (InterruptedException ie) { }
+			}
+		} catch (Exception e) {
+			// Socket may close during shutdown; ignore
+		}
+	}
+
+	private void updateBuddyListFromPayload(String payload)
+	{
+		ArrayList<BuddyStatusRecord> newList = new ArrayList<BuddyStatusRecord>();
+		BufferedReader br = new BufferedReader(new StringReader(payload));
+		try {
+			String line = br.readLine();
+			while (line != null) {
+				line = line.trim();
+				if (line.length() > 0) {
+					StringTokenizer t = new StringTokenizer(line);
+					if (t.countTokens() >= 4) {
+						BuddyStatusRecord rec = new BuddyStatusRecord();
+						rec.buddyId = t.nextToken();
+						// status is two tokens like "100 ONLINE"
+						String s1 = t.hasMoreTokens()? t.nextToken() : "";
+						String s2 = t.hasMoreTokens()? t.nextToken() : "";
+						rec.status = (s1+" "+s2).trim();
+						rec.IPaddress = t.hasMoreTokens()? t.nextToken() : "unknown";
+						rec.buddyPort = t.hasMoreTokens()? t.nextToken() : "unknown";
+						newList.add(rec);
+					}
+				}
+				line = br.readLine();
+			}
+		} catch (IOException e) {
+			// ignore
+		}
+		synchronized(this) {
+			buddyList = newList;
+		}
+	}
+
+	private void sendUdp(String payload) throws IOException
+	{
+		DatagramSocket s = new DatagramSocket();
+		try {
+			InetAddress serverIP = InetAddress.getByName(serverAddress);
+			sendUdp(s, serverIP, 1235, payload);
+		} finally {
+			try { s.close(); } catch (Exception e) {}
+		}
+	}
+
+	private void sendUdp(DatagramSocket sock, InetAddress ip, int port, String payload) throws IOException
+	{
+		byte[] buf = payload.getBytes();
+		DatagramPacket p = new DatagramPacket(buf, buf.length, ip, port);
+		sock.send(p);
+	}
+
+	private void enterChatMode(Socket s, BufferedReader in, DataOutputStream out)
+	{
+		activeChatSocket = s;
+		activeChatIn = in;
+		activeChatOut = out;
+		chatMode = true;
+
+		// Start receiver thread
+		chatReceiverThread = new Thread(new Runnable() {
+			public void run() {
+				try {
+					String line;
+					while ((line = activeChatIn.readLine()) != null) {
+						System.out.println("B: "+line);
+					}
+				} catch (IOException e) {
+					// ignore
+				} finally {
+					System.out.println("Buddy connection closed.");
+					chatMode = false;
+					try { if (activeChatSocket != null) activeChatSocket.close(); } catch (Exception e) {}
+					activeChatSocket = null;
+				}
+			}
+		});
+		chatReceiverThread.setDaemon(true);
+		chatReceiverThread.start();
+
+		System.out.println("Enter your text to send to buddy.  Enter q to quit.");
+		try {
+			String line;
+			while (chatMode) {
+				System.out.print("> ");
+				line = getLine();
+				if (line == null) break;
+				if (line.equals("q")) {
+					try { activeChatSocket.close(); } catch (Exception e) {}
+					break;
+				}
+				try {
+					activeChatOut.writeBytes(line+"\n");
+				} catch (Exception e) {
+					break;
+				}
+			}
+		} finally {
+			chatMode = false;
+			try { if (activeChatSocket != null) activeChatSocket.close(); } catch (Exception e) {}
+			activeChatSocket = null;
+		}
+	}
+
+	// Called by TCPMessenger when a connection arrives
+	void setPendingIncoming(Socket s)
+	{
+		if (activeChatSocket != null || chatMode) {
+			// Already in chat: auto-reject politely
+			try {
+				DataOutputStream out = new DataOutputStream(s.getOutputStream());
+				out.writeBytes("NO\n");
+				s.close();
+			} catch (Exception e) { }
+			return;
+		}
+		pendingIncomingSocket = s;
+	}
+
+}
+
+// A record structure to keep track of each individual buddy's status
+class BuddyStatusRecord
+{	public String IPaddress;
+	public String status;
+	public String buddyId;
+	public String buddyPort;
+
+	public String toString()
+	{	return buddyId+"\t"+status+"\t"+IPaddress+"\t"+buddyPort; }
+
+	public boolean isOnline()
+	{	return status.indexOf("100") >= 0; }
+}
+
+// This class implements the TCP welcome socket for other buddies to connect to.
+// I have left it here as an example to show where the prompt to ask for incoming connections could come from.
+
+class TCPMessenger implements Runnable
+{
+	private IMClient client;
+	private ServerSocket welcomeSocket;
+
+	public TCPMessenger(IMClient c, ServerSocket s)
+	{
+		client = c;
+		welcomeSocket = s;
+	}
+
+    public void run()
+	{
+		// This thread starts an infinite loop looking for TCP requests.
+		try
+		{
+			while (true)
+			{
+		    	// Listen for a TCP connection request.
+		    	Socket connection = welcomeSocket.accept();
+		    	// Store pending socket and prompt user
+		    	client.setPendingIncoming(connection);
+		    	System.out.print("\nDo you want to accept an incoming connection (y/n)? ");
+		    	// Read actually occurs with menu readline
+			}
+	    }
+		catch (SocketException se)
+		{
+			// Likely closed during shutdown; exit thread
+		}
+		catch (Exception e)
+		{	System.out.println(e); }
+	}
+}

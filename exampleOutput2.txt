@@ -1,0 +1,107 @@
+Select one of these options:
+  R - Register user id
+  L - Login as user id
+  A - Add buddy
+  D - Delete buddy
+  M - Message buddy
+  S - Buddy status
+  X - Exit application
+Your choice: r
+Enter user id: scott2
+Registering user id: scott2
+200 OK
+
+
+Select one of these options:
+  R - Register user id
+  L - Login as user id
+  A - Add buddy
+  D - Delete buddy
+  M - Message buddy
+  S - Buddy status
+  X - Exit application
+Your choice: a
+Enter buddy id: scott1
+200 OK
+
+
+Select one of these options:
+  R - Register user id
+  L - Login as user id
+  A - Add buddy
+  D - Delete buddy
+  M - Message buddy
+  S - Buddy status
+  X - Exit application
+Your choice: s
+My buddy list:
+scott1  100 ONLINE      127.0.0.1       1247
+
+
+Select one of these options:
+  R - Register user id
+  L - Login as user id
+  A - Add buddy
+  D - Delete buddy
+  M - Message buddy
+  S - Buddy status
+  X - Exit application
+Your choice:
+Do you want to accept an incoming connection (y/n)? y
+Connection accepted.
+Enter your text to send to buddy.  Enter q to quit.
+>
+B: Hello buddy!
+> Nice to meet you buddy!
+> q
+Buddy connection closed.
+
+
+Select one of these options:
+  R - Register user id
+  L - Login as user id
+  A - Add buddy
+  D - Delete buddy
+  M - Message buddy
+  S - Buddy status
+  X - Exit application
+Your choice: d
+Enter buddy id: testXY
+202 NO SUCH USER
+
+
+Select one of these options:
+  R - Register user id
+  L - Login as user id
+  A - Add buddy
+  D - Delete buddy
+  M - Message buddy
+  S - Buddy status
+  X - Exit application
+Your choice: a
+Enter buddy id: scott1
+201 INVALID
+
+
+Select one of these options:
+  R - Register user id
+  L - Login as user id
+  A - Add buddy
+  D - Delete buddy
+  M - Message buddy
+  S - Buddy status
+  X - Exit application
+Your choice: s
+My buddy list:
+scott1  100 ONLINE      127.0.0.1       1247
+
+
+Select one of these options:
+  R - Register user id
+  L - Login as user id
+  A - Add buddy
+  D - Delete buddy
+  M - Message buddy
+  S - Buddy status
+  X - Exit application
+Your choice: x
